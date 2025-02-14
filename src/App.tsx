@@ -69,7 +69,7 @@ const App: React.FC = () => {
         if (noBtnRef.current && originalRectRef.current) {
             const btnWidth = noBtnRef.current.offsetWidth;
             const btnHeight = noBtnRef.current.offsetHeight;
-            const marginTop = -120;
+            const marginTop = -100;
             const marginBottom = 150;
             const allowedTopMin = marginTop;
             const allowedTopMax = window.innerHeight - btnHeight - marginBottom;
