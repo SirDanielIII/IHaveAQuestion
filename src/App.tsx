@@ -1,24 +1,21 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import './App.css';
 
+const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+
 type Screen = 'prompt' | 'valentine' | 'final' | 'rickRoll';
 
 const App: React.FC = () => {
-    // Use a single state to track the current screen
     const [screen, setScreen] = useState<Screen>('prompt');
-    // State to delay enabling hover effects on the "No" button
     const [hoverEnabled, setHoverEnabled] = useState(false);
 
     const noBtnRef = useRef<HTMLButtonElement>(null);
     const originalRectRef = useRef<DOMRect | null>(null);
 
-    // Use refs for audio instances so they’re created only once
     const congratsAudio = useRef(new Audio('/projects/ihaveaquestion/congratulations.mp3'));
     const boomAudio = useRef(new Audio('/projects/ihaveaquestion/vine_boom.mp3'));
     const clickAudio = useRef(new Audio('/projects/ihaveaquestion/click.mp3'));
 
-    // When entering the Valentine screen, record the No button's original position
-    // and delay the hover effect to avoid accidental triggers.
     useEffect(() => {
         if (screen === 'valentine' && noBtnRef.current) {
             originalRectRef.current = noBtnRef.current.getBoundingClientRect();
@@ -28,18 +25,17 @@ const App: React.FC = () => {
         }
     }, [screen]);
 
-    // When screen changes to rickRoll, play the click sound and redirect.
     useEffect(() => {
         if (screen === 'rickRoll') {
             clickAudio.current.play().catch(console.error);
-            window.location.href =
-                'https://youtu.be/dQw4w9WgXcQ?si=M4MMSXfuz0lIR59J';
+            window.location.href = 'https://youtu.be/dQw4w9WgXcQ?si=M4MMSXfuz0lIR59J';
         }
     }, [screen]);
 
-    // Helper function to play the click sound.
     const playClick = useCallback(() => {
-        clickAudio.current.play().catch(console.error);
+        if (!isMobile) {
+            clickAudio.current.play().catch(console.error);
+        }
     }, []);
 
     const handleSureClick = useCallback(() => {
@@ -55,13 +51,14 @@ const App: React.FC = () => {
 
     const handleNoClick = useCallback(() => {
         playClick();
-        setScreen('rickRoll');
+        if (isMobile) {
+            moveButton();
+        } else {
+            setScreen('rickRoll');
+        }
     }, [playClick]);
 
-    const handleNoBtnMouseOver = useCallback(() => {
-        if (!hoverEnabled) return;
-
-        // Reset and play the boom sound
+    const moveButton = useCallback(() => {
         boomAudio.current.pause();
         boomAudio.current.currentTime = 0;
         boomAudio.current.play().catch(console.error);
@@ -69,7 +66,7 @@ const App: React.FC = () => {
         if (noBtnRef.current && originalRectRef.current) {
             const btnWidth = noBtnRef.current.offsetWidth;
             const btnHeight = noBtnRef.current.offsetHeight;
-            const marginTop = -100;
+            const marginTop = -80;
             const marginBottom = 150;
             const allowedTopMin = marginTop;
             const allowedTopMax = window.innerHeight - btnHeight - marginBottom;
@@ -84,9 +81,13 @@ const App: React.FC = () => {
 
             noBtnRef.current.style.transform = `translate(${translateX}px, ${translateY}px)`;
         }
-    }, [hoverEnabled]);
+    }, []);
 
-    // Render based on the current screen.
+    const handleNoBtnMouseOver = useCallback(() => {
+        if (!hoverEnabled || isMobile) return;
+        moveButton();
+    }, [hoverEnabled, moveButton]);
+
     if (screen === 'prompt') {
         return (
             <div className="app">
@@ -132,7 +133,6 @@ const App: React.FC = () => {
         );
     }
 
-    // For the rickRoll screen, the useEffect handles redirection.
     return null;
 };
 
